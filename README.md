@@ -19,6 +19,6 @@ class Hero(SQLModel, table=True):
 
 # Link
 
-**SQLModel**: https://github.com/tiangolo/sqlmodel
-**Pydantic**: https://github.com/pydantic/pydantic
-**SQLAlchemy**: https://github.com/sqlalchemy/sqlalchemy
+* **SQLModel**: https://github.com/tiangolo/sqlmodel
+* **Pydantic**: https://github.com/pydantic/pydantic
+* **SQLAlchemy**: https://github.com/sqlalchemy/sqlalchemy
