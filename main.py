@@ -387,7 +387,3 @@ class SQLModel(BaseModel, metaclass=SQLModelMetaclass, registry=default_registry
     def __repr_args__(self) -> Sequence[tuple[Optional[str], Any]]:
         # Don't show SQLAlchemy private attributes
         return [(k, v) for k, v in self.__dict__.items() if not k.startswith("_sa_")]
-
-    @property
-    def __fields_set__(self):
-        return self.__pydantic_fields_set__
