@@ -210,12 +210,13 @@ def get_column_from_field(field: FieldInfo) -> Union[Column, ORMDescriptor]:
     sa_column = getattr(field, "sa_column", PydanticUndefined)
     if isinstance(sa_column, Column):
         return sa_column.copy()
-    return hybrid_property(lambda _: field.get_default())   # type: ignore
+    return hybrid_property(lambda _: field.get_default(call_default_factory=True))   # type: ignore
 
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field, FieldInfo))
 class SQLModelMetaclass(ModelMetaclass, DeclarativeMeta):
     __sqlmodel_relationships__: dict[str, RelationshipInfo]
+    __sqlmodel_fields__: dict[str, FieldInfo]
 
     def __new__(
         mcs,
@@ -252,6 +253,7 @@ class SQLModelMetaclass(ModelMetaclass, DeclarativeMeta):
             "__weakref__": None,
             "__sqlmodel_relationships__": relationships,
             "__annotations__": pydantic_annotations,
+            "__sqlmodel_fields__": {}
         }
 
         allowed_config_kwargs: set[str] = {
@@ -324,6 +326,8 @@ class SQLModelMetaclass(ModelMetaclass, DeclarativeMeta):
             dict_used = dict_.copy()
             for field_name, field_value in cls.model_fields.items():
                 dict_used[field_name] = get_column_from_field(field_value)
+                if not isinstance(dict_used[field_name], Column):
+                    cls.__sqlmodel_fields__[field_name] = field_value
             for rel_name, rel_info in cls.__sqlmodel_relationships__.items():
                 if not rel_info.sa_relationship:
                     raise RuntimeError(
@@ -349,7 +353,9 @@ class SQLModel(BaseModel, metaclass=SQLModelMetaclass, registry=default_registry
         # Set __fields_set__ here, that would have been set when calling __init__
         # in the Pydantic model so that when SQLAlchemy sets attributes that are
         # added (e.g. when querying from DB) to the __fields_set__, this already exists
-        object.__setattr__(new_object, "__pydantic_fields_set__", set())
+        object.__setattr__(new_object, "__pydantic_fields_set__", cls.__sqlmodel_fields__.keys())
+        for key, value in cls.__sqlmodel_fields__.items():
+            new_object.__dict__[key] = value.get_default(call_default_factory=True)
         return new_object
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
