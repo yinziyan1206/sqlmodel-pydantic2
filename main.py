@@ -353,7 +353,7 @@ class SQLModel(BaseModel, metaclass=SQLModelMetaclass, registry=default_registry
         # Set __fields_set__ here, that would have been set when calling __init__
         # in the Pydantic model so that when SQLAlchemy sets attributes that are
         # added (e.g. when querying from DB) to the __fields_set__, this already exists
-        object.__setattr__(new_object, "__pydantic_fields_set__", cls.__sqlmodel_fields__.keys())
+        object.__setattr__(new_object, "__pydantic_fields_set__", set(cls.__sqlmodel_fields__.keys()))
         for key, value in cls.__sqlmodel_fields__.items():
             new_object.__dict__[key] = value.get_default(call_default_factory=True)
         return new_object
