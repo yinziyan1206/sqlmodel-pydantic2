@@ -209,7 +209,7 @@ default_registry = registry()
 def get_column_from_field(field: FieldInfo) -> Union[Column, ORMDescriptor]:
     sa_column = getattr(field, "sa_column", PydanticUndefined)
     if isinstance(sa_column, Column):
-        return sa_column.copy()
+        return sa_column._copy()  # noqa
     return hybrid_property(lambda _: field.get_default(call_default_factory=True))   # type: ignore
 
 
@@ -319,7 +319,7 @@ class SQLModelMetaclass(ModelMetaclass, DeclarativeMeta):
     ) -> None:
         base_is_table = False
         for base in bases:
-            if base.model_config.get("table", False):
+            if (config := getattr(base, 'model_config', None)) and config.get("table", False):
                 base_is_table = True
                 break
         if cls.model_config.get("table", False) and not base_is_table:
